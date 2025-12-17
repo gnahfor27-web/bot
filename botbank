@@ -1,0 +1,61 @@
+import discord bot
+from discord.ext import commands
+import json
+
+# إعدادات البوت
+intents = discord.Intents.default()
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+# تخزين البيانات
+bank_data = {}
+
+# تحميل البيانات من ملف JSON
+def load_data():
+    global bank_data
+    try:
+        with open('bank_data.json', 'r') as file:
+            bank_data = json.load(file)
+    except FileNotFoundError:
+        bank_data = {}
+
+# حفظ البيانات في ملف JSON
+def save_data():
+    with open('bank_data.json', 'w') as file:
+        json.dump(bank_data, file)
+
+# أوامر البوت
+@bot.event
+async def on_ready():
+    print(f'Logged in as {bot.user.name}')
+    load_data()
+
+# أمر لإضافة رصيد للبنك
+@bot.command()
+async def deposit(ctx, amount: int):
+    user_id = str(ctx.author.id)
+    if user_id not in bank_data:
+        bank_data[user_id] = 0
+    bank_data[user_id] += amount
+    save_data()
+    await ctx.send(f"{ctx.author.name}, تم إضافة {amount} إلى رصيدك. رصيدك الآن: {bank_data[user_id]}")
+a
+# أمر لعرض الرصيد
+@bot.command()
+async def balance(ctx):
+    user_id = str(ctx.author.id)
+    if user_id in bank_data:
+        await ctx.send(f"{ctx.author.name}, رصيدك هو: {bank_data[user_id]}")
+    else:
+        await ctx.send(f"{ctx.author.name}, ليس لديك رصيد حالي.")
+
+# أمر لسحب رصيد
+@bot.command()
+async def withdraw(ctx, amount: int):
+    user_id = str(ctx.author.id)
+    if user_id in bank_data and bank_data[user_id] >= amount:
+        bank_data[user_id] -= amount
+        save_data()
+        await ctx.send(f"{ctx.author.name}, تم سحب {amount}. رصيدك الآن: {bank_data[user_id]}")
+    else:
+        await ctx.send(f"{ctx.author.name}, رصيدك غير كافٍ للسحب.")
